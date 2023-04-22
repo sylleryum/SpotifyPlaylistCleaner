@@ -51,8 +51,14 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <image>
+                        <name>sylleryum/${project.artifactId}</name>
+                    </image>
+                </configuration>
             </plugin>
         </plugins>
     </build>
+
 
 </project>
