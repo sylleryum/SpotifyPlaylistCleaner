@@ -23,11 +23,13 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static com.sylleryum.spotifycleaner.helper.Literals.SESSION_ACCESS_TOKEN;
 import static com.sylleryum.spotifycleaner.helper.TraceIdGenerator.METHOD_NAME_NOT_FOUND;
@@ -107,13 +109,20 @@ public class TheController {
         return ResponseEntity.ok(user);
     }
 
-    @GetMapping("/playlists")
-    public ResponseEntity<?> getPlaylists(HttpSession session) throws MissingTokenException, URISyntaxException, JsonProcessingException {
+    @GetMapping(path = {"/playlists", "/"})
+    public ResponseEntity<?> getPlaylists(HttpServletRequest request, HttpSession session) throws MissingTokenException, URISyntaxException, JsonProcessingException {
         String traceId = TraceIdGenerator.writeTrace(this.getClass(), StackWalker.getInstance().walk(frames -> frames.findFirst().map(StackWalker.StackFrame::getMethodName)).orElse(METHOD_NAME_NOT_FOUND));
         AccessToken accessToken = (AccessToken) session.getAttribute(SESSION_ACCESS_TOKEN);
 
+        String requestUrl = request.getRequestURL().toString();
+        String contextPath = request.getContextPath();
+
         List<UserPlaylists> playlists = serviceApi.getPlaylists(accessToken);
-        return ResponseEntity.ok(new UserPlaylistWrapper(playlists));
+        List<UserPlaylists> result = playlists.stream().peek(item-> {
+            item.setClearCurrent(requestUrl+"clear-current-playing/"+item.getId());
+            item.setClearLastPlayed(requestUrl+"clear-last-played/"+item.getId());
+        }).collect(Collectors.toList());
+        return ResponseEntity.ok(new UserPlaylistWrapper(result));
     }
 
 }
