@@ -34,7 +34,7 @@ class ServiceApiImplTest {
 
     @BeforeAll
     static void init(@Autowired ServiceApi serviceApi) throws MissingTokenException, URISyntaxException {
-        accessToken = serviceApi.setRefresh("AQAIjS_tX0ug68qifQ2cuXCBxDmVsuq-AqajNV8zi7MIp63koCvbV0yu2HFtcy56GRzCFk2FXHSCCBYo2PQy2E1MTupOb_KZKht1yUh92oL3HTzgo7nrtYJCwbzHYOutwZY");
+        accessToken = serviceApi.setRefresh("");
     }
 
     @Test

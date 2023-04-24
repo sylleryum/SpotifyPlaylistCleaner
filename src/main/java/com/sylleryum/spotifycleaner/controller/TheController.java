@@ -16,12 +16,10 @@ import com.sylleryum.spotifycleaner.model.jsonResponses.UnavailableTracksWrapper
 import com.sylleryum.spotifycleaner.model.exception.MissingArgumentException;
 import com.sylleryum.spotifycleaner.model.exception.MissingTokenException;
 import com.sylleryum.spotifycleaner.service.ServiceApi;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -87,7 +85,8 @@ public class TheController {
         if (playlistId.isEmpty()) {
             throw new MissingArgumentException("Missing Playlist ID");
         }
-        AccessToken accessToken = (AccessToken) session.getAttribute(SESSION_ACCESS_TOKEN);
+        AccessToken accessToken  = (AccessToken) session.getAttribute(SESSION_ACCESS_TOKEN);
+
 
         boolean success = serviceApi.clearHistory(playlistId.get(), ClearType.CURRENT_PLAYING, accessToken);
         if (success) {
@@ -110,19 +109,31 @@ public class TheController {
     }
 
     @GetMapping(path = {"/playlists", "/"})
-    public ResponseEntity<?> getPlaylists(HttpServletRequest request, HttpSession session) throws MissingTokenException, URISyntaxException, JsonProcessingException {
+    public ResponseEntity<?> getPlaylists(HttpServletRequest request,@RequestParam(name="refresh-token") Optional<String> refreshToken, HttpSession session) throws MissingTokenException, URISyntaxException, JsonProcessingException {
         String traceId = TraceIdGenerator.writeTrace(this.getClass(), StackWalker.getInstance().walk(frames -> frames.findFirst().map(StackWalker.StackFrame::getMethodName)).orElse(METHOD_NAME_NOT_FOUND));
-        AccessToken accessToken = (AccessToken) session.getAttribute(SESSION_ACCESS_TOKEN);
+        AccessToken accessToken;
 
         String requestUrl = request.getRequestURL().toString();
         String contextPath = request.getContextPath();
+        if (refreshToken.isEmpty()){
+            accessToken = (AccessToken) session.getAttribute(SESSION_ACCESS_TOKEN);
+        } else {
+            accessToken = serviceApi.setRefresh(refreshToken.get());
+            session.setAttribute(SESSION_ACCESS_TOKEN, accessToken);
+            requestUrl = requestUrl.replace("/playlists","/");
+        }
+
+
+
 
         List<UserPlaylists> playlists = serviceApi.getPlaylists(accessToken);
+        String finalRequestUrl = requestUrl;
         List<UserPlaylists> result = playlists.stream().peek(item-> {
-            item.setClearCurrent(requestUrl+"clear-current-playing/"+item.getId());
-            item.setClearLastPlayed(requestUrl+"clear-last-played/"+item.getId());
+            item.setClearCurrent(finalRequestUrl +"clear-current-playing/"+item.getId());
+            item.setClearLastPlayed(finalRequestUrl +"clear-last-played/"+item.getId());
         }).collect(Collectors.toList());
-        return ResponseEntity.ok(new UserPlaylistWrapper(result));
+//        return ResponseEntity.ok(new UserPlaylistWrapper(result));
+        return ResponseEntity.ok(result);
     }
 
 }
