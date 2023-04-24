@@ -112,19 +112,14 @@ public class TheController {
     public ResponseEntity<?> getPlaylists(HttpServletRequest request,@RequestParam(name="refresh-token") Optional<String> refreshToken, HttpSession session) throws MissingTokenException, URISyntaxException, JsonProcessingException {
         String traceId = TraceIdGenerator.writeTrace(this.getClass(), StackWalker.getInstance().walk(frames -> frames.findFirst().map(StackWalker.StackFrame::getMethodName)).orElse(METHOD_NAME_NOT_FOUND));
         AccessToken accessToken;
+        accessToken = (AccessToken) session.getAttribute(SESSION_ACCESS_TOKEN);
 
         String requestUrl = request.getRequestURL().toString();
-        String contextPath = request.getContextPath();
-        if (refreshToken.isEmpty()){
-            accessToken = (AccessToken) session.getAttribute(SESSION_ACCESS_TOKEN);
-        } else {
+        if (accessToken==null && !refreshToken.isEmpty()){
             accessToken = serviceApi.setRefresh(refreshToken.get());
             session.setAttribute(SESSION_ACCESS_TOKEN, accessToken);
             requestUrl = requestUrl.replace("/playlists","/");
         }
-
-
-
 
         List<UserPlaylists> playlists = serviceApi.getPlaylists(accessToken);
         String finalRequestUrl = requestUrl;
