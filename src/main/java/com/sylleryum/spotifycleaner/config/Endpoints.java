@@ -19,8 +19,13 @@ public class Endpoints {
     public final String getAccess = "https://accounts.spotify.com/api/token";
     public final String userDetails = "v1/me";
     public final String getPlaylists = "https://api.spotify.com/v1/me/playlists?limit=50";
+
     public final String history = "https://api.spotify.com/v1/me/player/recently-played?limit=1";
     public final String getPlaybackState = "https://api.spotify.com/v1/me/player";
+
+    public final String pausePlayback = "https://api.spotify.com/v1/me/player/pause";
+    public final String previousTrack = "https://api.spotify.com/v1/me/player/previous";
+    public final String nextTrack = "https://api.spotify.com/v1/me/player/next";
     private final String authorization;
     private final String authorizationToAccess;
     private final String authorizeUrl;
@@ -34,7 +39,7 @@ public class Endpoints {
         authorizeUrl = "https://accounts.spotify.com/authorize?client_id=" +
                 spotifyCredentials.getClientId() + "&response_type=code&redirect_uri=" +
                 URLEncoder.encode(redirectUrl, StandardCharsets.UTF_8) +
-                "&scope=user-read-private%20user-read-email%20playlist-read-private%20playlist-modify-public%20playlist-modify-private%20user-read-recently-played%20user-read-playback-state";
+                "&scope=user-read-private%20user-read-email%20playlist-read-private%20playlist-modify-public%20playlist-modify-private%20user-read-recently-played%20user-read-playback-state%20user-modify-playback-state";
     }
 
     /**

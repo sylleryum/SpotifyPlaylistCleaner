@@ -16,13 +16,17 @@ import com.sylleryum.spotifycleaner.model.jsonResponses.UnavailableTracksWrapper
 import com.sylleryum.spotifycleaner.model.exception.MissingArgumentException;
 import com.sylleryum.spotifycleaner.model.exception.MissingTokenException;
 import com.sylleryum.spotifycleaner.service.ServiceApi;
+import org.apache.tomcat.util.http.fileupload.IOUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Map;
@@ -108,6 +112,43 @@ public class TheController {
         return ResponseEntity.ok(user);
     }
 
+    @GetMapping("/pause")
+    public ResponseEntity<?> pausePlayback(HttpSession session) throws MissingTokenException, URISyntaxException, JsonProcessingException {
+        String traceId = TraceIdGenerator.writeTrace(this.getClass(), StackWalker.getInstance().walk(frames -> frames.findFirst().map(StackWalker.StackFrame::getMethodName)).orElse(METHOD_NAME_NOT_FOUND));
+        AccessToken accessToken;
+        accessToken = (AccessToken) session.getAttribute(SESSION_ACCESS_TOKEN);
+
+        boolean result = serviceApi.pausePlayback(accessToken);
+        if (result){
+            return ResponseEntity.status(HttpStatus.OK).body("ok");
+        }
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("failed");
+    }
+    @GetMapping("/next")
+    public ResponseEntity<?> nextTrack(HttpSession session) throws MissingTokenException, URISyntaxException, JsonProcessingException {
+        String traceId = TraceIdGenerator.writeTrace(this.getClass(), StackWalker.getInstance().walk(frames -> frames.findFirst().map(StackWalker.StackFrame::getMethodName)).orElse(METHOD_NAME_NOT_FOUND));
+        AccessToken accessToken;
+        accessToken = (AccessToken) session.getAttribute(SESSION_ACCESS_TOKEN);
+
+        boolean result = serviceApi.nextTrack(accessToken);
+        if (result){
+            return ResponseEntity.status(HttpStatus.OK).body("ok");
+        }
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("failed");
+    }
+
+    @GetMapping("/previous")
+    public ResponseEntity<?> previousPlayback(HttpSession session) throws MissingTokenException, URISyntaxException, JsonProcessingException {
+        String traceId = TraceIdGenerator.writeTrace(this.getClass(), StackWalker.getInstance().walk(frames -> frames.findFirst().map(StackWalker.StackFrame::getMethodName)).orElse(METHOD_NAME_NOT_FOUND));
+        AccessToken accessToken;
+        accessToken = (AccessToken) session.getAttribute(SESSION_ACCESS_TOKEN);
+
+        boolean result = serviceApi.previousTrack(accessToken);
+        if (result){
+            return ResponseEntity.status(HttpStatus.OK).body("ok");
+        }
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("failed");
+    }
     @GetMapping(path = {"/playlists", "/"})
     public ResponseEntity<?> getPlaylists(HttpServletRequest request,@RequestParam(name="refresh-token") Optional<String> refreshToken, HttpSession session) throws MissingTokenException, URISyntaxException, JsonProcessingException {
         String traceId = TraceIdGenerator.writeTrace(this.getClass(), StackWalker.getInstance().walk(frames -> frames.findFirst().map(StackWalker.StackFrame::getMethodName)).orElse(METHOD_NAME_NOT_FOUND));
@@ -129,6 +170,12 @@ public class TheController {
         }).collect(Collectors.toList());
 //        return ResponseEntity.ok(new UserPlaylistWrapper(result));
         return ResponseEntity.ok(result);
+    }
+
+    @RequestMapping("/a")
+    public String home(HttpServletResponse response) {
+        response.setHeader("Content-Security-Policy", "default-src 'self'; img-src 'self' data:; font-src 'self';");
+        return "Hello World!";
     }
 
 }

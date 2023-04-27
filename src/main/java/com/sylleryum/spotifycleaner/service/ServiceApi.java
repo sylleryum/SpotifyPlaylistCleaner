@@ -47,6 +47,14 @@ public interface ServiceApi {
 
     List<FullTrackDetails> getUnavailables(String playlistId, AccessToken accessToken) throws MissingTokenException, URISyntaxException, JsonProcessingException;
 
+    boolean pausePlayback(AccessToken currentAccessToken) throws MissingTokenException, URISyntaxException, JsonProcessingException;
+
+    boolean nextTrack(AccessToken currentAccessToken) throws MissingTokenException, URISyntaxException;
+
+    boolean previousTrack(AccessToken currentAccessToken) throws MissingTokenException, URISyntaxException;
+
+    boolean callPost(String url, AccessToken currentAccessToken) throws MissingTokenException, URISyntaxException;
+
     /**
      *
      * @param accessToken

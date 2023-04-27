@@ -48,7 +48,7 @@ public class ServiceApiImpl implements ServiceApi {
     //TODO remove
     private RestTemplate template = new RestTemplate();
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(ServiceApiImpl.class);
-
+    private AccessToken globalAccessToken;
     private final Endpoints endpoints;
     private final WebClient webClient;
     private final ObjectMapper objectMapper;
@@ -103,7 +103,6 @@ public class ServiceApiImpl implements ServiceApi {
 
         return h;
     }
-
 
 
     @Override
@@ -286,6 +285,58 @@ public class ServiceApiImpl implements ServiceApi {
         return unavailableTracks;
     }
 
+    @Override
+    public boolean pausePlayback(AccessToken currentAccessToken) throws MissingTokenException, URISyntaxException, JsonProcessingException {
+        AccessToken accessToken = beforeCall(currentAccessToken);
+
+        try {
+            HttpStatus response = webClient.put()
+                    .uri(endpoints.pausePlayback)
+//                    .header("Authorization", "Bearer "+accessToken.getAccessToken())
+                    .header("Authorization", "Bearer " + accessToken.getAccessToken())
+                    //.headers(httpHeaders -> httpHeaders.addAll(this.headers))
+                    .accept(MediaType.APPLICATION_JSON)
+                    .retrieve()
+                    .toBodilessEntity()
+                    .map(responseEntity -> responseEntity.getStatusCode())
+                    .block();
+            return response == HttpStatus.NO_CONTENT;
+        } catch (Exception e) {
+            throw e;
+        }
+    }
+
+    @Override
+    public boolean nextTrack(AccessToken currentAccessToken) throws MissingTokenException, URISyntaxException {
+        AccessToken accessToken = beforeCall(currentAccessToken);
+        return callPost(endpoints.nextTrack, accessToken);
+    }
+
+    @Override
+    public boolean previousTrack(AccessToken currentAccessToken) throws MissingTokenException, URISyntaxException {
+        AccessToken accessToken = beforeCall(currentAccessToken);
+        return callPost(endpoints.previousTrack, accessToken);
+    }
+
+    @Override
+    public boolean callPost(String url, AccessToken accessToken) throws MissingTokenException, URISyntaxException {
+
+        try {
+            HttpStatus response = webClient.post()
+                    .uri(url)
+//                    .header("Authorization", "Bearer "+accessToken.getAccessToken())
+                    .header("Authorization", "Bearer " + accessToken.getAccessToken())
+                    //.headers(httpHeaders -> httpHeaders.addAll(this.headers))
+                    .accept(MediaType.APPLICATION_JSON)
+                    .retrieve()
+                    .toBodilessEntity()
+                    .map(responseEntity -> responseEntity.getStatusCode())
+                    .block();
+            return response == HttpStatus.NO_CONTENT;
+        } catch (Exception e) {
+            throw e;
+        }
+    }
 
     /**
      * {@inheritDoc}
@@ -331,7 +382,7 @@ public class ServiceApiImpl implements ServiceApi {
                         "\nRefresh token: " + responseToken.getRefreshToken() +
                         "\nvalidity: " + responseToken.getValidity(),
                 this.getClass(), StackWalker.getInstance().walk(frames -> frames.findFirst().map(StackWalker.StackFrame::getMethodName)).orElse(METHOD_NAME_NOT_FOUND));
-
+        this.globalAccessToken=responseToken;
         return responseToken;
 
     }
@@ -397,8 +448,11 @@ public class ServiceApiImpl implements ServiceApi {
         MultiValueMap<String, String> bodyParameters = new LinkedMultiValueMap<>();
         HttpEntity<MultiValueMap<String, String>> requestEntity;
 //        cleaner();
-        if (accessToken == null) {
-            throw new MissingTokenException("No access or refresh token, please access the following URL to (re)start the authorization: " + endpoints.authorizeUrl());
+        if (accessToken == null ) {
+            if (this.globalAccessToken==null){
+                throw new MissingTokenException("No access or refresh token, please access the following URL to (re)start the authorization: " + endpoints.authorizeUrl());
+            }
+            accessToken = this.globalAccessToken;
         }
 
         if (accessToken.getAccessToken() != null && (accessToken.getValidity() > System.currentTimeMillis())) {
