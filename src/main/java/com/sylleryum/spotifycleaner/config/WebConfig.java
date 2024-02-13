@@ -29,7 +29,7 @@ public class WebConfig extends WebMvcConfigurerAdapter {
 //                .allowCredentials(true)
 //                .allowedMethods("HEAD", "GET", "PUT", "POST", "DELETE", "PATCH");
         registry.addMapping("/**")
-                .allowedOrigins("https://sylleryum.github.io/","http://localhost:4200/", "file://", "https://spotifycleaner-sylleryum.cloud.okteto.net/", "http://127.0.0.1")
+                .allowedOrigins("https://sylleryum.github.io/","http://localhost:4200/", "file://", "https://spotifycleaner-sylleryum.cloud.okteto.net/", "http://127.0.0.1", "https://electrical-theresita-projects23123123.koyeb.app/")
                 .allowedMethods("*")
                 .allowedHeaders("*")
                 .exposedHeaders("Access-Control-Allow-Origin", "Access-Control-Allow-Credentials")

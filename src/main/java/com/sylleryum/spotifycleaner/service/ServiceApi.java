@@ -1,10 +1,7 @@
 package com.sylleryum.spotifycleaner.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.sylleryum.spotifycleaner.model.AccessToken;
-import com.sylleryum.spotifycleaner.model.ClearType;
-import com.sylleryum.spotifycleaner.model.FullTrackDetails;
-import com.sylleryum.spotifycleaner.model.History;
+import com.sylleryum.spotifycleaner.model.*;
 import com.sylleryum.spotifycleaner.model.exception.ClearPlaylistException;
 import com.sylleryum.spotifycleaner.model.exception.MissingTokenException;
 import com.sylleryum.spotifycleaner.model.jsonResponses.UserPlaylists;
@@ -33,9 +30,21 @@ public interface ServiceApi {
 
     String orderPlaylistRandom(String playlistId, AccessToken currentAccessToken) throws MissingTokenException, URISyntaxException, JsonProcessingException;
 
-    boolean clearHistory(String playlistId, ClearType clearType, AccessToken currentAccessToken) throws MissingTokenException, URISyntaxException, JsonProcessingException, ClearPlaylistException;
+    boolean clearHistory(String playlistId, Enums.ClearType clearType, AccessToken currentAccessToken) throws MissingTokenException, URISyntaxException, JsonProcessingException, ClearPlaylistException;
 
     String getCurrentPlaying(AccessToken accessToken) throws MissingTokenException, URISyntaxException, JsonProcessingException;
+
+    /**
+     *
+     * @param playlistId
+     * @param limit
+     * @param currentAccessToken
+     * @return key=song name, value=Uri for the song
+     * @throws MissingTokenException
+     * @throws URISyntaxException
+     * @throws JsonProcessingException
+     */
+    Map<String,String> getPlaylistTracks(String playlistId, Integer limit, AccessToken currentAccessToken) throws MissingTokenException, URISyntaxException, JsonProcessingException;
 
     /**
      * @param playlistId
@@ -43,7 +52,7 @@ public interface ServiceApi {
      * @throws MissingTokenException
      * @throws URISyntaxException
      */
-    Map<String, List<Item>> getPlaylistTracks(String playlistId, AccessToken accessToken) throws MissingTokenException, URISyntaxException, JsonProcessingException;
+    Map<String, List<Item>> getPlaylist(String playlistId, AccessToken accessToken) throws MissingTokenException, URISyntaxException, JsonProcessingException;
 
     List<FullTrackDetails> getUnavailables(String playlistId, AccessToken accessToken) throws MissingTokenException, URISyntaxException, JsonProcessingException;
 
@@ -57,6 +66,18 @@ public interface ServiceApi {
 
     /**
      *
+     * @param url
+     * @param body
+     * @param accessToken
+     * @return response of the request, in case of error in the request, the response will contain "failed request" prepended
+     * @param <T>
+     * @param <R>
+     * @throws JsonProcessingException
+     */
+    <T, R> R callPost(String url, T body, AccessToken accessToken) throws JsonProcessingException;
+
+    /**
+     *
      * @param accessToken
      * @return returns a sorted order of {@link UserPlaylists} from current user
      * @throws MissingTokenException
@@ -64,6 +85,8 @@ public interface ServiceApi {
      * @throws JsonProcessingException
      */
     List<UserPlaylists> getPlaylists(AccessToken accessToken) throws MissingTokenException, URISyntaxException, JsonProcessingException;
+
+    boolean mixPlaylist(AccessToken currentAccessToken, String match, String destinationPlaylistId, Integer amount, Enums.Order order) throws MissingTokenException, URISyntaxException, JsonProcessingException;
 
     //    PlaylistItem createPlaylist(String playlistName) throws MissingTokenException, URISyntaxException;
 //    AccessToken beforeCall(AccessToken accessToken) throws MissingTokenException, URISyntaxException;

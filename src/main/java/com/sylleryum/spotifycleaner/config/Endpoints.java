@@ -53,7 +53,7 @@ public class Endpoints {
     }
 
     /**
-     * https://api.spotify.com/v1/playlists/{playlistId}/tracks?offset={offset}&limit=100&market={market}
+     * https://api.spotify.com/v1/playlists/{playlistId}/
      *
      * @param playlistId
      * @param market
@@ -63,6 +63,26 @@ public class Endpoints {
         //https://api.spotify.com/v1/playlists/%s?market=%s
         //https://api.spotify.com/v1/playlists/%s/tracks?limit=100&market=%s
         return String.format("v1/playlists/%s", playlistId);
+    }
+
+    /**
+     * https://api.spotify.com/v1/playlists/{playlistId}/tracks?offset=0&limit={limit}
+     * @param playlistId
+     * @param limit
+     * @return
+     */
+    public String playlistTracks(String playlistId, Integer limit) {
+        //https://api.spotify.com/v1/playlists/5yqdzHl6sv7jDMEyNsG2OS/tracks?offset=0&limit=10
+        return String.format("v1/playlists/%s/tracks?limit=%s", playlistId, limit);
+    }
+    /**
+     * https://api.spotify.com/v1/playlists/{playlistId}/tracks?offset=0&limit=10
+     * @param playlistId
+     * @return
+     */
+    public String playlistTracks(String playlistId) {
+        //https://api.spotify.com/v1/playlists/5yqdzHl6sv7jDMEyNsG2OS/tracks?offset=0&limit=10
+        return String.format("v1/playlists/%s/tracks?limit=%s", playlistId, 10);
     }
 
     /**

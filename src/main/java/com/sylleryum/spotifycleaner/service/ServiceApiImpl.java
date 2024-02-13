@@ -11,6 +11,7 @@ import com.sylleryum.spotifycleaner.model.currentPlaying.CurrentPlaying;
 import com.sylleryum.spotifycleaner.model.exception.ClearPlaylistException;
 import com.sylleryum.spotifycleaner.model.exception.MissingTokenException;
 import com.sylleryum.spotifycleaner.model.jsonResponses.UserPlaylists;
+import com.sylleryum.spotifycleaner.model.playlistTracks.PlaylistTracks;
 import com.sylleryum.spotifycleaner.model.spotify.playlists.PlaylistItem;
 import com.sylleryum.spotifycleaner.model.spotify.playlists.PlaylistList;
 import com.sylleryum.spotifycleaner.model.spotify.singlePlaylist.Item;
@@ -129,7 +130,7 @@ public class ServiceApiImpl implements ServiceApi {
         //getPlaylistTracks(playlistId).values().stream().findFirst().get()
         AccessToken accessToken = beforeCall(currentAccessToken);
 
-        Map<String, List<Item>> playlistTracks = getPlaylistTracks(playlistId, accessToken);
+        Map<String, List<Item>> playlistTracks = getPlaylist(playlistId, accessToken);
         List<String> uriList = playlistTracks.values().stream().findFirst().get()
                 .stream().map(item -> item.getTrack().getUri()).collect(Collectors.toList());
 
@@ -177,21 +178,21 @@ public class ServiceApiImpl implements ServiceApi {
      * @throws JsonProcessingException
      */
     @Override
-    public boolean clearHistory(String playlistId, ClearType clearType, AccessToken currentAccessToken) throws MissingTokenException, URISyntaxException, JsonProcessingException, ClearPlaylistException {
+    public boolean clearHistory(String playlistId, Enums.ClearType clearType, AccessToken currentAccessToken) throws MissingTokenException, URISyntaxException, JsonProcessingException, ClearPlaylistException {
 
         try {
             AccessToken accessToken = beforeCall(currentAccessToken);
             List<Track> tempListDelete;
             String lastTrack;
 
-            if (clearType == ClearType.LAST_PLAYED) {
+            if (clearType == Enums.ClearType.LAST_PLAYED) {
                 lastTrack = this.getLastItemPlayed(accessToken);
             } else {
                 lastTrack = this.getCurrentPlaying(accessToken);
             }
 
             //get items in the given playlist
-            Map<String, List<Item>> playlistTracks = this.getPlaylistTracks(playlistId, accessToken);
+            Map<String, List<Item>> playlistTracks = this.getPlaylist(playlistId, accessToken);
             List<Item> playlistItems = playlistTracks.entrySet().stream().findFirst().get().getValue();
 
             //get items in the given playlist UNTIL BEFORE last given song
@@ -201,7 +202,7 @@ public class ServiceApiImpl implements ServiceApi {
 
             //the given ClearType track isn't listed in the provided playlistId
             if (listDelete.size() >= playlistItems.size()) {
-                String type = clearType == ClearType.LAST_PLAYED ? "last played " : "current playing ";
+                String type = clearType == Enums.ClearType.LAST_PLAYED ? "last played " : "current playing ";
                 throw new ClearPlaylistException("the " + type + "track wasn't found in the provided playlist: " + playlistId);
             }
 
@@ -246,7 +247,21 @@ public class ServiceApiImpl implements ServiceApi {
      * {@inheritDoc}
      */
     @Override
-    public Map<String, List<Item>> getPlaylistTracks(String playlistId, AccessToken currentAccessToken) throws MissingTokenException, URISyntaxException, JsonProcessingException {
+    public Map<String,String> getPlaylistTracks(String playlistId, Integer limit, AccessToken currentAccessToken) throws MissingTokenException, URISyntaxException, JsonProcessingException {
+        AccessToken accessToken = beforeCall(currentAccessToken);
+
+        PlaylistTracks playlistTracks = callApiGet(endpoints.playlistTracks(playlistId, limit), PlaylistTracks.class, accessToken);
+        Map<String, String> result = playlistTracks.getItems().stream().collect(Collectors.toMap(
+                item -> item.getTrack().getName(),
+                item -> item.getTrack().getUri()));
+        return result;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Map<String, List<Item>> getPlaylist(String playlistId, AccessToken currentAccessToken) throws MissingTokenException, URISyntaxException, JsonProcessingException {
         AccessToken accessToken = beforeCall(currentAccessToken);
         List<Item> itemList = new ArrayList<>();
         String nextOffset;
@@ -273,7 +288,7 @@ public class ServiceApiImpl implements ServiceApi {
     public List<FullTrackDetails> getUnavailables(String playlistId, AccessToken accessToken) throws MissingTokenException, URISyntaxException, JsonProcessingException {
         //beforeCall invoked inside getPlaylistTracks
 
-        List<Item> itemList = getPlaylistTracks(playlistId, accessToken).values().stream().findFirst().get();
+        List<Item> itemList = getPlaylist(playlistId, accessToken).values().stream().findFirst().get();
         List<FullTrackDetails> unavailableTracks = new ArrayList<>();
 
         for (Item item : itemList) {
@@ -342,6 +357,30 @@ public class ServiceApiImpl implements ServiceApi {
      * {@inheritDoc}
      */
     @Override
+    public <T, R> R callPost(String url, T body, AccessToken accessToken){
+
+        try {
+            String response = this.webClient.post()
+                    .uri(url)
+//                    .headers(httpHeaders -> httpHeaders.addAll(this.headers))
+                    .header("Authorization", "Bearer " + accessToken.getAccessToken())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(BodyInserters.fromValue(body))
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .block();
+
+            return (R) response;
+        } catch (Exception e){
+            String toReturn = "failed request: "+e.toString();
+            return (R) toReturn;
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public List<UserPlaylists> getPlaylists(AccessToken currentAccessToken) throws MissingTokenException, URISyntaxException, JsonProcessingException {
         AccessToken accessToken = beforeCall(currentAccessToken);
         User user = getUserDetails(accessToken);
@@ -357,6 +396,39 @@ public class ServiceApiImpl implements ServiceApi {
 
         userPlaylists.sort((o1, o2) -> o1.getName().compareToIgnoreCase(o2.getName()));
         return userPlaylists;
+    }
+
+    @Override
+    public boolean mixPlaylist(AccessToken currentAccessToken,
+                               String match,
+                               String destinationPlaylistId,
+                               Integer amount, Enums.Order order) throws MissingTokenException, URISyntaxException, JsonProcessingException {
+        AccessToken accessToken = beforeCall(currentAccessToken);
+        List<String> playlistUris = new ArrayList<>();
+
+        try {
+            List<UserPlaylists> userPlaylists = this.getPlaylists(accessToken);
+            List<UserPlaylists> playlistsFound = userPlaylists.stream().filter(playlist -> playlist.getName().contains(match)).collect(Collectors.toList());
+
+            //going through all the playlists that match the criteria
+            for (UserPlaylists playlist : playlistsFound) {
+                //get the Uris of the tracks to be added
+                Map<String, String> tempPlaylistTracks = this.getPlaylistTracks(playlist.getId(), 10, accessToken);
+                playlistUris.addAll(tempPlaylistTracks.values());
+            }
+
+            //TODO maior que 100
+            String response = this.callPost(endpoints.managePlaylist(destinationPlaylistId),
+                    new Uri(playlistUris),
+                    accessToken);
+            if (response.contains("failed request")) return false;
+
+//            this.callApiDelete();
+
+            return true;
+        }catch (Exception e){
+            throw e;
+        }
     }
 
     //=========================internal methods
@@ -400,21 +472,26 @@ public class ServiceApiImpl implements ServiceApi {
 
     public <T> T callApiGet(String url, Class<T> objectClass, AccessToken accessToken) throws JsonProcessingException {
 
-        String response = webClient.get()
-                .uri(url)
+        try {
+            String response = webClient.get()
+                    .uri(url)
 //                    .header("Authorization", "Bearer "+accessToken.getAccessToken())
-                .header("Authorization", "Bearer " + accessToken.getAccessToken())
-                //.headers(httpHeaders -> httpHeaders.addAll(this.headers))
-                .accept(MediaType.APPLICATION_JSON)
-                .retrieve()
-                .bodyToMono(String.class)
-                .block();
+                    .header("Authorization", "Bearer " + accessToken.getAccessToken())
+                    //.headers(httpHeaders -> httpHeaders.addAll(this.headers))
+                    .accept(MediaType.APPLICATION_JSON)
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .block();
 
-        JavaType javaType = objectMapper.getTypeFactory().constructType(objectClass);
-        T result;
-        result = objectMapper.readValue(response, javaType);
-        System.out.println();
-        return result;
+            JavaType javaType = objectMapper.getTypeFactory().constructType(objectClass);
+            T result;
+            result = objectMapper.readValue(response, javaType);
+            System.out.println();
+            return result;
+        }
+        catch (Exception e){
+            throw e;
+        }
     }
 
     public <T> T callApiDelete(String url, Tracks tracksToDelete, Class<T> objectClass, AccessToken accessToken) throws JsonProcessingException {
