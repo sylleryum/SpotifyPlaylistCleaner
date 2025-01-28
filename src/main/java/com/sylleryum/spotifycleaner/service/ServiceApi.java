@@ -88,6 +88,14 @@ public interface ServiceApi {
 
     boolean mixPlaylist(AccessToken currentAccessToken, String match, String destinationPlaylistId, Integer amount, Enums.Order order) throws MissingTokenException, URISyntaxException, JsonProcessingException;
 
+    /**
+     * clear the tracks on the playlist active currently
+     * @param accessToken
+     * @return
+     * @throws JsonProcessingException
+     */
+    boolean clearCurrent(AccessToken accessToken) throws JsonProcessingException, ClearPlaylistException, MissingTokenException, URISyntaxException;
+
     //    PlaylistItem createPlaylist(String playlistName) throws MissingTokenException, URISyntaxException;
 //    AccessToken beforeCall(AccessToken accessToken) throws MissingTokenException, URISyntaxException;
 //    /**

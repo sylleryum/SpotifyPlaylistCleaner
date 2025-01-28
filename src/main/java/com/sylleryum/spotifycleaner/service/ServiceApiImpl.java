@@ -227,6 +227,15 @@ public class ServiceApiImpl implements ServiceApi {
     }
 
     @Override
+    public boolean clearCurrent(AccessToken currentAccessToken) throws JsonProcessingException, ClearPlaylistException, MissingTokenException, URISyntaxException {
+        AccessToken accessToken = beforeCall(currentAccessToken);
+        CurrentPlaying currentPlaying = this.callApiGet(endpoints.getPlaybackState, CurrentPlaying.class, accessToken);
+
+        String currentPlaylistId = currentPlaying.getContext().getUri().split(":")[2];
+        return this.clearHistory(currentPlaylistId, Enums.ClearType.CURRENT_PLAYING, accessToken);
+    }
+
+    @Override
     public String getCurrentPlaying(AccessToken currentAccessToken) throws MissingTokenException, URISyntaxException, JsonProcessingException {
         AccessToken accessToken = beforeCall(currentAccessToken);
 
@@ -430,7 +439,6 @@ public class ServiceApiImpl implements ServiceApi {
             throw e;
         }
     }
-
     //=========================internal methods
 
     /**

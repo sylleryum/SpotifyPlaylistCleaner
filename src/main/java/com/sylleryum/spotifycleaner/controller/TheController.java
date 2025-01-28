@@ -89,6 +89,17 @@ public class TheController {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("failed");
     }
 
+    @GetMapping(path = {"/clear-playback"})
+    public ResponseEntity<?> clearCurrentPlaying(HttpSession session) throws MissingArgumentException, MissingTokenException, URISyntaxException, JsonProcessingException, ClearPlaylistException {
+        AccessToken accessToken = (AccessToken) session.getAttribute(SESSION_ACCESS_TOKEN);
+
+        boolean success = serviceApi.clearCurrent(accessToken);
+        if (success) {
+            return ResponseEntity.ok("done");
+        }
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("failed");
+    }
+
 
     @GetMapping("/me")
     public ResponseEntity<?> getUser(HttpSession session) throws MissingTokenException, URISyntaxException, JsonProcessingException {
