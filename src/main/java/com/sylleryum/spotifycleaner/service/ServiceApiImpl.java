@@ -36,6 +36,7 @@ import reactor.core.publisher.Mono;
 import reactor.netty.http.client.HttpClient;
 import reactor.netty.transport.logging.AdvancedByteBufFormat;
 
+import javax.swing.text.html.Option;
 import java.net.URISyntaxException;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -53,9 +54,10 @@ public class ServiceApiImpl implements ServiceApi {
     private final Endpoints endpoints;
     private final WebClient webClient;
     private final ObjectMapper objectMapper;
-
     @Value("${playlist.ignore}")
     private String[] plalistsToIgnore;
+    @Value("${spotify.refresh.token}")
+    private Optional<String> refreshToken;
 
     public ServiceApiImpl(Endpoints endpoints, WebClient webClient, ObjectMapper objectMapper) {
         this.endpoints = endpoints;
@@ -535,9 +537,13 @@ public class ServiceApiImpl implements ServiceApi {
 //        cleaner();
         if (accessToken == null ) {
             if (this.globalAccessToken==null){
-                throw new MissingTokenException("No access or refresh token, please access the following URL to (re)start the authorization: " + endpoints.authorizeUrl());
+                if (refreshToken.isEmpty()){
+                    throw new MissingTokenException("No access or refresh token, please access the following URL to (re)start the authorization: " + endpoints.authorizeUrl());
+                }
+                accessToken = new AccessToken(refreshToken.get());
+            } else {
+                accessToken = this.globalAccessToken;
             }
-            accessToken = this.globalAccessToken;
         }
 
         if (accessToken.getAccessToken() != null && (accessToken.getValidity() > System.currentTimeMillis())) {

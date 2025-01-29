@@ -37,8 +37,8 @@ public class AccessToken {
         this.validity = validity;
     }
 
-    public AccessToken(String accessToken) {
-        this.accessToken = accessToken;
+    public AccessToken(String refreshToken) {
+        this.refreshToken = refreshToken;
     }
 
     public AccessToken(String accessToken, String tokenType, Integer expiresIn, String refreshToken, String scope, long validity, Map<String, Object> additionalProperties) {

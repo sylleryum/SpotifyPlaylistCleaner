@@ -11,7 +11,8 @@ public class SpotifyCredentials {
 //    @Value("${spotify.secretId}")
     private final String secretId;
 
-    public SpotifyCredentials(@Value("${spotify.clientId}") String clientId, @Value("${spotify.secretId}") String secretId) {
+    public SpotifyCredentials(@Value("${spotify.clientId}") String clientId,
+                              @Value("${spotify.secretId}") String secretId) {
         this.clientId = clientId;
         this.secretId = secretId;
     }
