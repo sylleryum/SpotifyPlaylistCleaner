@@ -62,9 +62,11 @@ public class Endpoints {
     public String singlePlaylist(String playlistId, String market) {
         //https://api.spotify.com/v1/playlists/%s?market=%s
         //https://api.spotify.com/v1/playlists/%s/tracks?limit=100&market=%s
-        return String.format("v1/playlists/%s", playlistId);
+        return String.format("v1/playlists/%s?market=%s", playlistId, market);
     }
-
+//curl --request GET \
+//  --url 'https://api.spotify.com/v1/playlists/6TF0U1zEK4wm2lPidKZgRZ?market=br' \
+//  --header 'Authorization: Bearer 1POdFZRZbvb...qqillRxMr2z'
     /**
      * https://api.spotify.com/v1/playlists/{playlistId}/tracks?offset=0&limit={limit}
      * @param playlistId

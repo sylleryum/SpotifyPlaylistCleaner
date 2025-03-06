@@ -278,7 +278,7 @@ public class ServiceApiImpl implements ServiceApi {
         String nextOffset;
         User user = getUserDetails(accessToken);
 
-        PreSinglePlaylist preSinglePlaylist = callApiGet(endpoints.singlePlaylist(playlistId, user.getCountry()), PreSinglePlaylist.class, accessToken);
+        PreSinglePlaylist preSinglePlaylist = callApiGet(endpoints.singlePlaylist(playlistId, "US"), PreSinglePlaylist.class, accessToken);
         SinglePlaylist singlePlaylist = preSinglePlaylist.getTracks();
 
 
