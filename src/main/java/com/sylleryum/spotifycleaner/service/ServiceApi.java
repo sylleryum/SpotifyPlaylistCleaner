@@ -54,6 +54,8 @@ public interface ServiceApi {
      */
     Map<String, List<Item>> getPlaylist(String playlistId, AccessToken accessToken) throws MissingTokenException, URISyntaxException, JsonProcessingException;
 
+    Map<String, List<Item>> getPlaylist(String playlistId, AccessToken accessToken, Boolean includeMarket) throws MissingTokenException, URISyntaxException, JsonProcessingException;
+
     List<FullTrackDetails> getUnavailables(String playlistId, AccessToken accessToken) throws MissingTokenException, URISyntaxException, JsonProcessingException;
 
     boolean pausePlayback(AccessToken currentAccessToken) throws MissingTokenException, URISyntaxException, JsonProcessingException;

@@ -36,7 +36,6 @@ import reactor.core.publisher.Mono;
 import reactor.netty.http.client.HttpClient;
 import reactor.netty.transport.logging.AdvancedByteBufFormat;
 
-import javax.swing.text.html.Option;
 import java.net.URISyntaxException;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -272,13 +271,16 @@ public class ServiceApiImpl implements ServiceApi {
      * {@inheritDoc}
      */
     @Override
-    public Map<String, List<Item>> getPlaylist(String playlistId, AccessToken currentAccessToken) throws MissingTokenException, URISyntaxException, JsonProcessingException {
+    public Map<String, List<Item>> getPlaylist(String playlistId, AccessToken currentAccessToken, Boolean includeMarket) throws MissingTokenException, URISyntaxException, JsonProcessingException {
         AccessToken accessToken = beforeCall(currentAccessToken);
         List<Item> itemList = new ArrayList<>();
         String nextOffset;
         User user = getUserDetails(accessToken);
 
-        PreSinglePlaylist preSinglePlaylist = callApiGet(endpoints.singlePlaylist(playlistId, "US"), PreSinglePlaylist.class, accessToken);
+        PreSinglePlaylist preSinglePlaylist = callApiGet(
+                endpoints.singlePlaylist(playlistId, includeMarket ? user.getCountry() : ""),
+                PreSinglePlaylist.class,
+                accessToken);
         SinglePlaylist singlePlaylist = preSinglePlaylist.getTracks();
 
 
@@ -295,11 +297,19 @@ public class ServiceApiImpl implements ServiceApi {
         return Map.of(singlePlaylist.getName(), itemList);
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Map<String, List<Item>> getPlaylist(String playlistId, AccessToken currentAccessToken) throws MissingTokenException, URISyntaxException, JsonProcessingException {
+        return this.getPlaylist(playlistId, currentAccessToken, false);
+    }
+
     @Override
     public List<FullTrackDetails> getUnavailables(String playlistId, AccessToken accessToken) throws MissingTokenException, URISyntaxException, JsonProcessingException {
         //beforeCall invoked inside getPlaylistTracks
 
-        List<Item> itemList = getPlaylist(playlistId, accessToken).values().stream().findFirst().get();
+        List<Item> itemList = getPlaylist(playlistId, accessToken, true).values().stream().findFirst().get();
         List<FullTrackDetails> unavailableTracks = new ArrayList<>();
 
         for (Item item : itemList) {
